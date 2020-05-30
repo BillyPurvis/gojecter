@@ -2,8 +2,11 @@ package main
 
 import (
 	"bytes"
+	
 	"io"
+	"io/ioutil"
 	"os"
+	"regexp"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -14,6 +17,11 @@ type DOMAssetMeta struct {
 	node *html.Node
 	href string
 }
+
+// Queue is a queue of DOMAssetMeta
+type Queue chan DOMAssetMeta
+
+var toRetrieve Queue = make(chan DOMAssetMeta)
 
 func main() {
 	// Open file
@@ -32,11 +40,19 @@ func main() {
 		panic(err)
 	}
 
-	for _, meta := range foundStyleFiles {
-		docInsertStyleNodeWithContent(&meta, ".foo { color: blue }")
-		meta.node.Parent.RemoveChild(meta.node)
-	}
+	// Chuck found assets into Queue
+	go func(c chan DOMAssetMeta) {
+		for _, meta := range foundStyleFiles {
+			c <- meta
+		}
+	}(toRetrieve)
 
+	// Read from it
+	go getFileContents(toRetrieve)
+
+	// TODO: The system exits before the routine is fished. Need to use syncGroup
+
+	
 	newFile, err := os.Create("index.html")
 	if err != nil {
 		panic(err)
@@ -47,22 +63,56 @@ func main() {
 		panic(err)
 	}
 	newFile.Write(fileBytes)
+}
 
+func getFileContents(c chan DOMAssetMeta) {
+	for {
+		f, ok := <-c
+		if !ok {
+			return
+		}		
+		af, err := os.Open(f.href)
+		if err != nil {
+			panic(err)
+		}
+		
+		ct, err := ioutil.ReadAll(af)
+		if err != nil {
+			panic(err)
+		}
+	
+		docInsertStyleNodeWithContent(&f, string(ct))
+		f.node.Parent.RemoveChild(f.node)
+		
+	}
+}
+
+func trimQueryStrFromHref(s string) (string, error) {
+	r, err := regexp.Compile("\\?.*")
+	if err != nil {
+		return "", err
+	}
+	s = r.ReplaceAllString(s, "")
+	return s, nil
 }
 
 // findAllStyleAssetPaths finds all links for stylesheets returns an slice
 // with their DOM node and href value
 func findAllStyleAssetPaths(doc *html.Node) ([]DOMAssetMeta, error) {
-
 	assetsFound := []DOMAssetMeta{}
-
 	var f func(*html.Node)
 	f = func(n *html.Node) {
 		if n.Type == html.ElementNode && n.Data == "link" {
 			for _, a := range n.Attr {
 				if strings.Contains(a.Val, ".css") {
+
+					hrefTrim, err := trimQueryStrFromHref(a.Val)
+					if err != nil {
+						panic(err)
+					}
+
 					assetsFound = append(assetsFound, DOMAssetMeta{
-						n, a.Val,
+						n, hrefTrim,
 					})
 				}
 			}
@@ -72,7 +122,6 @@ func findAllStyleAssetPaths(doc *html.Node) ([]DOMAssetMeta, error) {
 		}
 	}
 	f(doc)
-
 	return assetsFound, nil
 }
 
