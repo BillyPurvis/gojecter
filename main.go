@@ -2,9 +2,10 @@ package main
 
 import (
 	"bytes"
-	
-	"io"
 	"io/ioutil"
+	"sync"
+
+	"io"
 	"os"
 	"regexp"
 	"strings"
@@ -24,6 +25,8 @@ type Queue chan DOMAssetMeta
 var toRetrieve Queue = make(chan DOMAssetMeta)
 
 func main() {
+
+	var wg sync.WaitGroup
 	// Open file
 	file, err := os.Open("./index.html")
 	if err != nil {
@@ -40,19 +43,11 @@ func main() {
 		panic(err)
 	}
 
-	// Chuck found assets into Queue
-	go func(c chan DOMAssetMeta) {
-		for _, meta := range foundStyleFiles {
-			c <- meta
-		}
-	}(toRetrieve)
+	for _, meta := range foundStyleFiles {
+		wg.Add(1)
+		go worker(meta, &wg)
+	}
 
-	// Read from it
-	go getFileContents(toRetrieve)
-
-	// TODO: The system exits before the routine is fished. Need to use syncGroup
-
-	
 	newFile, err := os.Create("index.html")
 	if err != nil {
 		panic(err)
@@ -63,29 +58,38 @@ func main() {
 		panic(err)
 	}
 	newFile.Write(fileBytes)
+
+	wg.Wait()
 }
 
-func getFileContents(c chan DOMAssetMeta) {
-	for {
-		f, ok := <-c
-		if !ok {
-			return
-		}		
-		af, err := os.Open(f.href)
-		if err != nil {
-			panic(err)
-		}
-		
-		ct, err := ioutil.ReadAll(af)
-		if err != nil {
-			panic(err)
-		}
-	
-		docInsertStyleNodeWithContent(&f, string(ct))
-		f.node.Parent.RemoveChild(f.node)
-		
+func worker(meta DOMAssetMeta, wg *sync.WaitGroup) {
+
+	defer wg.Done()
+
+	af, err := os.Open(meta.href)
+	if err != nil {
+		panic(err)
 	}
+
+	ct, err := ioutil.ReadAll(af)
+	if err != nil {
+		panic(err)
+	}
+
+	docInsertStyleNodeWithContent(&meta, string(ct))
+	meta.node.Parent.RemoveChild(meta.node)
 }
+
+// func getFileContents(c chan DOMAssetMeta) {
+// 	for {
+// 		f, ok := <-c
+// 		if !ok {
+// 			return
+// 		}
+//
+
+// 	}
+// }
 
 func trimQueryStrFromHref(s string) (string, error) {
 	r, err := regexp.Compile("\\?.*")
