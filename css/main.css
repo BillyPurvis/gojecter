@@ -1,0 +1,182 @@
+html {
+  color: #222;
+  font-size: 1em;
+  line-height: 1.4;
+
+  -webkit-text-size-adjust: 100%;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+  -webkit-box-sizing: inherit;
+  -moz-box-sizing: inherit;
+  box-sizing: inherit;
+}
+
+body {
+  width: 100%;
+  margin: 0;
+  padding: 0 1rem 0 1rem;
+  font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue",
+    Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-weight: 300;
+}
+main {
+  display: block;
+}
+a {
+  color: #222;
+}
+a:hover {
+  opacity: 1;
+  color: #bd2de1;
+}
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+h1 {
+  font-weight: 600;
+  font-size: 2.5rem;
+  margin: 0;
+}
+h2 {
+  font-size: 1.75rem;
+}
+h3 {
+  font-weight: 500;
+}
+p {
+  font-weight: 600;
+}
+footer {
+  margin-bottom: 2rem;
+  text-align: right;
+  font-weight: 600;
+}
+footer a {
+  color: #757575;
+}
+
+#site-wrap {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+#site-nav ul {
+  flex-direction: row;
+  justify-content: center;
+}
+
+#site-nav ul li {
+  font-weight: 600;
+  padding: 1em;
+}
+
+.jummbo-heading {
+  max-width: 500px;
+}
+.block .annotation {
+  right: 0;
+  position: absolute;
+}
+
+/**
+* HELPERs
+*/
+.light {
+  font-weight: 500;
+  color: #757575;
+}
+span.purple {
+  color: #bd2de1;
+  font-weight: 600;
+}
+.container {
+  margin: 13rem 0 13rem 0;
+}
+.block {
+  width: 100%;
+  position: relative;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.d-flex {
+  display: flex;
+}
+.d-flex.row {
+  flex-direction: column;
+}
+.d-flex-item {
+  flex: 1;
+  padding: 1.25em 0 1.25em 0;
+  line-height: 2em;
+}
+.d-flex-item p:first-of-type {
+  line-height: initial;
+}
+.list li {
+  margin: 3.75em 0 3.75em 0;
+}
+
+/**
+*  Media Queries
+**/
+@media screen and (min-width: 500px) {
+  body {
+    padding: 0 5rem 0 5rem;
+  }
+  #site-nav ul {
+    justify-content: flex-end;
+  }
+}
+
+@media screen and (min-width: 768px) {
+  p {
+    font-size: 1.25rem;
+  }
+  h1 {
+    font-size: 3.25rem;
+  }
+  h2 {
+    font-size: 2rem;
+  }
+  #site-nav ul {
+    justify-content: flex-end;
+  }
+  .jummbo-heading {
+    max-width: 650px;
+  }
+  .container {
+    margin: 17rem 0 17rem 0;
+  }
+}
+
+@media screen and (min-width: 900px) {
+  .d-flex.row {
+    flex-direction: row;
+  }
+  .d-flex-item {
+    padding: 1.25em;
+  }
+  .d-flex-item:first-child {
+    padding-left: 0;
+  }
+  .d-flex-item:last-child {
+    padding-right: 0;
+  }
+}
+@media screen and (min-width: 1440px) {
+  body {
+    padding: 0 15rem 0 15rem;
+  }
+}
