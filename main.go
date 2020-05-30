@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"sync"
 
@@ -48,6 +49,8 @@ func main() {
 		go worker(meta, &wg)
 	}
 
+	wg.Wait()
+
 	newFile, err := os.Create("index.html")
 	if err != nil {
 		panic(err)
@@ -59,11 +62,10 @@ func main() {
 	}
 	newFile.Write(fileBytes)
 
-	wg.Wait()
 }
 
 func worker(meta DOMAssetMeta, wg *sync.WaitGroup) {
-
+	fmt.Println(meta.href)
 	defer wg.Done()
 
 	af, err := os.Open(meta.href)
@@ -79,17 +81,6 @@ func worker(meta DOMAssetMeta, wg *sync.WaitGroup) {
 	docInsertStyleNodeWithContent(&meta, string(ct))
 	meta.node.Parent.RemoveChild(meta.node)
 }
-
-// func getFileContents(c chan DOMAssetMeta) {
-// 	for {
-// 		f, ok := <-c
-// 		if !ok {
-// 			return
-// 		}
-//
-
-// 	}
-// }
 
 func trimQueryStrFromHref(s string) (string, error) {
 	r, err := regexp.Compile("\\?.*")
