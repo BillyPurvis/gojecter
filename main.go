@@ -20,16 +20,13 @@ type DOMAssetMeta struct {
 	href string
 }
 
-// Queue is a queue of DOMAssetMeta
-type Queue chan DOMAssetMeta
-
-var toRetrieve Queue = make(chan DOMAssetMeta)
-
 func main() {
+
+	target := "./index.html"
 
 	var wg sync.WaitGroup
 	// Open file
-	file, err := os.Open("./index.html")
+	file, err := os.Open(target)
 	if err != nil {
 		panic(err)
 	}
@@ -51,23 +48,20 @@ func main() {
 
 	wg.Wait()
 
-	newFile, err := os.Create("index.html")
-	if err != nil {
-		panic(err)
-	}
+	replaceOriginFileWithInjectedAssets(doc)
 
-	fileBytes, err := nodeToBytes(doc)
-	if err != nil {
-		panic(err)
+	fmt.Printf("-----------------\nAssets injected into: %v\n-----------------\n", target)
+	for _, a := range foundStyleFiles {
+		fmt.Println(a.href)
 	}
-	newFile.Write(fileBytes)
 
 }
 
 func worker(meta DOMAssetMeta, wg *sync.WaitGroup) {
-	fmt.Println(meta.href)
 	defer wg.Done()
 
+	//TODO: Need to check if it's an external or internal link
+	// and support that
 	af, err := os.Open(meta.href)
 	if err != nil {
 		panic(err)
@@ -80,6 +74,19 @@ func worker(meta DOMAssetMeta, wg *sync.WaitGroup) {
 
 	docInsertStyleNodeWithContent(&meta, string(ct))
 	meta.node.Parent.RemoveChild(meta.node)
+}
+
+func replaceOriginFileWithInjectedAssets(doc *html.Node) error {
+	newFile, err := os.Create("index.html")
+	if err != nil {
+		return err
+	}
+	fileBytes, err := nodeToBytes(doc)
+	if err != nil {
+		return err
+	}
+	newFile.Write(fileBytes)
+	return nil
 }
 
 func trimQueryStrFromHref(s string) (string, error) {
@@ -105,7 +112,7 @@ func findAllStyleAssetPaths(doc *html.Node) ([]DOMAssetMeta, error) {
 					if err != nil {
 						panic(err)
 					}
-
+					// TODO: Remove duplicate assets
 					assetsFound = append(assetsFound, DOMAssetMeta{
 						n, hrefTrim,
 					})
