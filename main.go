@@ -48,7 +48,7 @@ func main() {
 
 	wg.Wait()
 
-	replaceOriginFileWithInjectedAssets(doc)
+	saveChangesToFile(doc)
 
 	fmt.Printf("-----------------\nAssets injected into: %v\n-----------------\n", target)
 	for _, a := range foundStyleFiles {
@@ -72,11 +72,13 @@ func worker(meta DOMAssetMeta, wg *sync.WaitGroup) {
 		panic(err)
 	}
 
-	docInsertStyleNodeWithContent(&meta, string(ct))
-	meta.node.Parent.RemoveChild(meta.node)
+	insertStyles(&meta, string(ct))
+	removeReplaceLinkNode(meta.node)
+
 }
 
-func replaceOriginFileWithInjectedAssets(doc *html.Node) error {
+// saveChangesToFile saves the modified DOM to the origin file
+func saveChangesToFile(doc *html.Node) error {
 	newFile, err := os.Create("index.html")
 	if err != nil {
 		return err
@@ -89,6 +91,7 @@ func replaceOriginFileWithInjectedAssets(doc *html.Node) error {
 	return nil
 }
 
+// trimQueryStrFromHref removes any query strings from urls
 func trimQueryStrFromHref(s string) (string, error) {
 	r, err := regexp.Compile("\\?.*")
 	if err != nil {
@@ -96,6 +99,11 @@ func trimQueryStrFromHref(s string) (string, error) {
 	}
 	s = r.ReplaceAllString(s, "")
 	return s, nil
+}
+
+// removeReplaceLinkNode removes the <link> tag that was replaced with the link asset raw content
+func removeReplaceLinkNode(node *html.Node) {
+	node.Parent.RemoveChild(node)
 }
 
 // findAllStyleAssetPaths finds all links for stylesheets returns an slice
@@ -128,7 +136,7 @@ func findAllStyleAssetPaths(doc *html.Node) ([]DOMAssetMeta, error) {
 }
 
 // Insert a new style tag replacing the linked stylesheet with the stylesheets content
-func docInsertStyleNodeWithContent(n *DOMAssetMeta, content string) {
+func insertStyles(n *DOMAssetMeta, content string) {
 	styleNode := &html.Node{
 		Type: html.ElementNode,
 		Data: "style",
